@@ -15,6 +15,7 @@ module Infer.Types
   , generalize
   , instantiate
   , prettyType
+  , normalizeType
   ) where
 
 import qualified Data.Map.Strict as Map
@@ -137,3 +138,23 @@ instantiate (Forall vs t) = do
 
     letters :: [String]
     letters = [1..] >>= flip replicateM ['a'..'z']
+
+-- | Normalize type variables so they are named a, b, c, ... in order of first appearance
+normalizeType :: Type -> Type
+normalizeType ty = apply subst ty
+  where
+    -- Collect type variables in order of first appearance (left-to-right)
+    collectVars :: Type -> [TVar]
+    collectVars (TVar v) = [v]
+    collectVars (TCon _) = []
+    collectVars (TFun t1 t2) = collectVars t1 ++ collectVars t2
+    collectVars (TTuple ts) = concatMap collectVars ts
+
+    -- Remove duplicates preserving order
+    nub' :: Eq a => [a] -> [a]
+    nub' [] = []
+    nub' (x:xs) = x : nub' (filter (/= x) xs)
+
+    vars = nub' (collectVars ty)
+    names = [1..] >>= flip replicateM ['a'..'z']
+    subst = Map.fromList (zip vars (map TVar names))

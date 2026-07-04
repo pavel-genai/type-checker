@@ -40,9 +40,9 @@ inferExpr env expr =
     Left err -> Left err
     Right (s, t) -> Right (apply s t)
 
--- | Convenience: infer and pretty-print
+-- | Convenience: infer and pretty-print (with normalized variable names)
 inferType :: TypeEnv -> Expr -> Either TypeError String
-inferType env expr = prettyType <$> inferExpr env expr
+inferType env expr = prettyType . normalizeType <$> inferExpr env expr
 
 -- | Core Algorithm W implementation
 infer :: TypeEnv -> Expr -> Infer (Subst, Type)
